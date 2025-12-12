@@ -31,23 +31,20 @@ Google Colab with NVCC Compiler
 #include <stdio.h>
 #include <stdlib.h>
 
-__global__ void reduce(int *g_in, int *g_out, int n) {
-    extern __shared__ int sdata[];
-    
-    int tid = threadIdx.x;
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    
-    sdata[tid] = (i < n) ? g_in[i] : 0;
-    __syncthreads();
-    
-    for (int s = blockDim.x / 2; s > 0; s >>= 1) {
-        if (tid < s) {
-            sdata[tid] += sdata[tid + s];
-        }
-        __syncthreads();
+__global__ void matrixMultiply(int *a, int *b, int *c, int size)
+{
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+
+    int sum = 0;
+    if (row < size && col < size)
+    {
+    for (int k = 0; k < size; ++k)
+    {
+        sum += a[row * size + k] * b[k * size + col];
     }
-    
-    if (tid == 0) g_out[blockIdx.x] = sdata[0];
+    c[row * size + col] = sum;
+    }
 }
 
 int main() {
